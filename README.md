@@ -4,9 +4,11 @@ repair aac and aacPlus files grabbed from the internet
 
 Info
 ----
-Browser get stuck if aac file is defective and will not start to play or refuse to play next aac file.
+Aac files consist of multiple segments, frames. Each frame has a header and payload. 
+Browser get stuck if aac file frame is defective and will not start to play or refuse to play next aac file.
 This will stop the entire playlist.
-File gets trimmed from head to tail. Cut off byte count is shown in the summary (aac_repair.txt). 
+File gets trimmed from head to tail, to remove defective frames. 
+Cut off byte count is shown in the summary (aac_repair.txt). 
 
 Usage
 -----
