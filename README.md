@@ -43,13 +43,6 @@ File System
 
 
 
-package deploy class
-    __init__.py
-    
-    # expose the class
-    from aac_repair import AacRepair
-
-
 pip install
 -----------
     """ xxs Linux xxs """

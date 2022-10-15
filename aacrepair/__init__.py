@@ -43,9 +43,6 @@ File system:
     aacRepair.repair()
 
 List of files is written to dictionary {file_name_key: file_byte_content_value}
-
-package deploy class:
-    __init__.py - "from aac_repair import AacRepair"
 """
 
 import os

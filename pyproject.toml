@@ -4,14 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aacRepair"
-version = "0.2"
+version = "0.3"
 description = "repair aac files"
 keywords = ['audio', 'aac repair', 'aacp repair',]
 license = {text = "MIT License"}
 readme = "README.md"
 requires-python = ">=3.7"
 dynamic = ['authors',]
-
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -24,6 +23,12 @@ classifiers = [
 ]
 dependencies = [
 ]
+
+[project.urls]
+homepage = "https://github.com/44xtc44"
+documentation = "https://aacRepair.readthedocs.io/"
+repository = "https://github.com/44xtc44/aacRepair"
+changelog = ""
 
 [tool.pytest.ini_options]
 addopts = "--cov=."
