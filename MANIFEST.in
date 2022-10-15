@@ -1,0 +1,8 @@
+include LICENSE.rst
+include MANIFEST.in
+include README.md
+include aacrepair/aacrepair.py
+
+prune venv
+recursive-include docs *
+prune docs/build

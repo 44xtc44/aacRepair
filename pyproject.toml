@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools >= 42.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aacRepair"
+version = "0.1"
+description = "repair aac files"
+keywords = ['audio', 'aac repair', 'aacp repair',]
+license = {text = "MIT License"}
+readme = "README.md"
+requires-python = ">=3.7"
+dynamic = ['authors',]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: OS Independent",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Android",
+    "Development Status :: 5 - Production/Stable",
+    "Topic :: Sound/Audio :: Capture/Recording",
+]
+dependencies = [
+]
+
+[tool.pytest.ini_options]
+addopts = "--cov=."
+testpaths = "."
+
+[tool.mypy]
+mypy_path = "aacRepair"
+check_untyped_defs = true
+disallow_any_generics = true
+ignore_missing_imports = true
+no_implicit_optional = true
+show_error_codes = true
+strict_equality = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_configs = true
+no_implicit_reexport = true
