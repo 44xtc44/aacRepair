@@ -47,10 +47,10 @@ code::
 
 pip install::
 
-   """ xxs Linux xxs """
+   """ Linux """
    $ pip3 install aacrepair
 
-   """ xxm Windows xxm """
+   """ Windows """
    > pip install aacrepair
 
 
