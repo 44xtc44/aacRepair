@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "aacRepair"
 version = "0.4"
 description = "repair aac files"
-keywords = ['audio', 'aac repair', 'aacp repair','aacrepair', 'aacprepair']
+keywords = ['audio', 'aac repair', 'aacp repair','aacrepair', 'aacprepair',]
 license = {file = "LICENSE.rst"}
 readme = "README.md"
 requires-python = ">=3.6"
@@ -28,7 +28,6 @@ dependencies = [
 homepage = "https://github.com/44xtc44"
 documentation = "https://aacRepair.readthedocs.io/"
 repository = "https://github.com/44xtc44/aacRepair"
-changelog = ""
 
 [tool.pytest.ini_options]
 addopts = "--cov=."
