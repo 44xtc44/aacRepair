@@ -24,25 +24,34 @@
 """ module repairs aac and aacPlus files,
 browser get stuck if aac is defective and will not play, also in a playlist
 module must know where to store the repaired files, it creates an "aac_repair" folder
+and (over)writes a log in this folder, log is printed on stdout
 
 usage:
-    Instantiate AacRepair class with arguments, folder path is mandatory.
-    1. Dictionary of files is provided. Folder path is used to store repaired files.
-    2. No dictionary provided. Folder path is used as list to import files into a dictionary AND store repaired files.
+   Instantiate AacRepair class with one or two arguments. Folder path is mandatory!
+   1. Dictionary of files is provided. Folder path is used to store repaired files.
+   aac_rep = AacRepair(export_path, file_dict)
+   2. No dictionary provided. Folder path is used as list to import files into a dictionary AND store repaired files.
+   aac_rep = AacRepair("/home/Kitty/aac_files")
 
 web server:
-    flask endpoint converts uploaded files from file storage type to bytestream .read() function
-    {file(n).aac: b'\x65\x66\x67\x00\x10\x00\x00\x00\x04\x00'}
-    files = request.files.getlist('fileUploadAcpRepair')
-    f_dict = {f.filename: f.read() if f.filename[-5:] == ".aacp" or f.filename[-4:] == ".aac" else None for f in files}
-    aacRepair = aac_repair.AacRepair("/home/Kitty/aac_files", f_dict)
-    aacRepair.repair()
+   web server endpoint converts uploaded files from file storage type to bytestream .read() function
+   List of files is written to dictionary {file_name_key: file_byte_content_value}
+   {file(n).aac: b'\x65\x66\x67\x00\x10\x00\x00\x00\x04\x00'}
+   files = request.files.getlist('fileUploadAcpRepair')
+   f_dict = {f.filename: f.read() if f.filename[-5:] == ".aacp" or f.filename[-4:] == ".aac" else None for f in files}
+   aac_rep = AacRepair("/home/Kitty/aac_files", f_dict)
+   aac_rep.repair()
 
 File system:
-    aacRepair = aac_repair.AacRepair("/home/Kitty/aac_files")
-    aacRepair.repair()
+   aac_rep = AacRepair(export_path, f_dict)
+   aac_rep.repair()
 
-List of files is written to dictionary {file_name_key: file_byte_content_value}
+Technical
+   aac files use obviously a header (hex fff1) to divide segments / payloads
+   we convert the file to hex string (list) to apply a search frame (list) [f,f,f,1]
+   start file[0:4], shift search frame file[1:5], file[2:6]
+   head cut from the start of first header ...[fff1 file]
+   tail cut (head cut to the toes) until the beginning of last header [file]fff1...
 """
 
 import os
@@ -69,8 +78,8 @@ class AacRepair:
         self.file_dict_from_folder()
 
     def file_dict_from_folder(self):
-        """ create dictionary for the repair method from folder
-        or take an existing dictionary (prepared by web server, no file path, only file name)
+        """ create dictionary for the repair method from folder, OR
+        take an existing dictionary (prepared by web server, no file path, only file name)
         create the export folder for repaired files
         """
         files = []
@@ -92,7 +101,7 @@ class AacRepair:
             return
 
     def repair(self):
-        """ call reapair function
+        """ call repair function
         """
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             futures = [executor.submit(self.repair_one_file, name, content) for name, content in self.file_dict.items()]
@@ -123,6 +132,17 @@ class AacRepair:
     def tool_aacp_repair_head(self, f_name, chunk):
         """return bytes slice from shifted start to the end of chunk, except on error
         convert hex and make search string, cut and convert back to bytes
+
+        code
+           convert data stream to hex and create search string, direction left to right,
+           use index from begin of file, hex_chunk[start:end]
+           while shifts the search frame one step over the file (list)
+           cut out bytes from shifted start to end of file
+           convert hex to bytes
+
+        Info:
+           The term 'chunk' comes from web server. It is a piece of the byte stream in the buffer.
+           chunk[0:4] are the beginning words of the file, convert a word of two byte(8) to hex(16)
         """
         self.file_size_dict[f_name] = len(chunk)
         hex_chunk = chunk.hex()
@@ -149,7 +169,14 @@ class AacRepair:
 
     def tool_aacp_repair_tail(self, f_name, chunk):
         """return bytes slice cut, except on error
-        convert hex and make search string (reversed index), cut and convert back to bytes
+
+        code
+           convert data stream to hex and create reversed search string, direction right to left,
+           use index from end of file, reverse index hex_chunk[end:start]
+           while shifts the search frame one step over the file (list of hex values)
+           tail cut until the beginning of last header (file)[fff1]... hex_chunk[:end]
+           means cut out bytes from beginning of file to rightmost begin of search frame
+           convert hex to bytes
         """
         hex_chunk = chunk.hex()
         start, end = -1, -5
