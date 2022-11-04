@@ -174,8 +174,8 @@ class AacRepair:
            convert data stream to hex and create reversed search string, direction right to left,
            use index from end of file, reverse index hex_chunk[end:start]
            while shifts the search frame one step over the file (list of hex values)
-           tail cut until the beginning of last header (file)[fff1]... hex_chunk[:end]
-           means cut out bytes from beginning of file to rightmost begin of search frame
+           cut from file start to the beginning of last header (file)[fff1]... hex_chunk[:end]
+           means cut out bytes to rightmost begin of search frame
            convert hex to bytes
         """
         hex_chunk = chunk.hex()
