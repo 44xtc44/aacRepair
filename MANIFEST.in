@@ -2,6 +2,9 @@ include LICENSE.rst
 include MANIFEST.in
 include README.md
 include aacrepair/aacrepair.py
+include aacrepair/Test/test_aac.py
+include aacrepair/Test/aac_file/empty.aac
+include aacrepair/Test/aac_file/white_noise.aac
 
 prune venv
 recursive-include docs *
