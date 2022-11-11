@@ -8,7 +8,7 @@ Aac files consist of multiple segments, frames. Each frame has a header and payl
 Browser get stuck if aac file frame is defective and will not start to play or refuse to play next aac file.
 This will stop the entire playlist.
 File gets trimmed from head to tail, to remove defective frames. 
-Cut off byte count is shown in the summary (aac_repair.txt). 
+Cut off byte count is shown in the summary.
 
 Usage
 -----
@@ -28,15 +28,17 @@ Web Server
    * web server gets not the file path, only file name - needs path to store repaired files
    * dictionary {file(n).aac: b'\x65\x66\x67\x00\x10\x00\x00\x00\x04\x00'}
 
+::
 
     files = request.files.getlist('fileUploadAcpRepair')
-    f_dict = {f.filename: f.read() if f.filename[-5:] == ".aacp" or f.filename[-4:] == ".aac" else None for f in files}
+    f_dict = {f: open(f, "rb").read() for f in files if f[-5:] == ".aacp" or f[-4:] == ".aac"}
     aacRepair = AacRepair("/home/Kitty/aac_files", f_dict)
     aacRepair.repair()
 
 File System
 * List of files in folder is written to dictionary {file_name_key: file_byte_content_value}
 
+::
 
     aacRepair = AacRepair("/home/Kitty/aac_files")
     aacRepair.repair()
