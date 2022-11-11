@@ -21,37 +21,38 @@
 #   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #   SOFTWARE.
 ###################################################################################
-""" module repairs aac and aacPlus files,
-browser get stuck if aac is defective and will not play, also in a playlist
-module must know where to store the repaired files, it creates an "aac_repair" folder
-and (over)writes a log in this folder, log is printed on stdout
+"""Module stores repaired copies of aac and aacPlus files in the ``aac_repair`` folder
+
+Browser audio gets stuck if aac is defective and will not play, also in a playlist.
 
 usage:
    Instantiate AacRepair class with one or two arguments. Folder path is mandatory!
-   1. Dictionary of files is provided. Folder path is used to store repaired files.
-   aac_rep = AacRepair(export_path, file_dict)
-   2. No dictionary provided. Folder path is used as list to import files into a dictionary AND store repaired files.
-   aac_rep = AacRepair("/home/Kitty/aac_files")
 
-web server:
-   web server endpoint converts uploaded files from file storage type to bytestream .read() function
+   * Dictionary of files is provided. Folder path is used to store repaired files.
+      * aac_rep = AacRepair(export_path, file_dict)
+   * No dictionary provided. Folder path is used as list to import files into a dictionary AND store repaired files.
+      * aac_rep = AacRepair("/home/Kitty/aac_files")
+
+Web server:
+   (Flask tested) web server endpoint converts uploaded files from file storage type to bytestream .read() function
    List of files is written to dictionary {file_name_key: file_byte_content_value}
    {file(n).aac: b'\x65\x66\x67\x00\x10\x00\x00\x00\x04\x00'}
    files = request.files.getlist('fileUploadAcpRepair')
    f_dict = {f.filename: f.read() if f.filename[-5:] == ".aacp" or f.filename[-4:] == ".aac" else None for f in files}
-   aac_rep = AacRepair("/home/Kitty/aac_files", f_dict)
-   aac_rep.repair()
-
-File system:
    aac_rep = AacRepair(export_path, f_dict)
    aac_rep.repair()
 
-Technical
-   aac files use obviously a header (hex fff1) to divide segments / payloads
-   we convert the file to hex string (list) to apply a search frame (list) [f,f,f,1]
-   start file[0:4], shift search frame file[1:5], file[2:6]
-   head cut from the start of first header ...[fff1 file]
-   tail cut (head cut to the toes) until the beginning of last header [file]fff1...
+File system:
+   aac_rep = AacRepair(aac_files_folder)
+   aac_rep.repair()
+
+technical stuff:
+   aac files use a header to divide segments / payloads, (part of header is hex fff1)
+   Create a header search frame binary b'\xff\xf1', hex fff1
+   Move the header search frame over the aac file
+   start is file[0:2], shift the search frame file[1:3], file[2:4]
+   aac file head: remove the first defective! payload ...[fff1 file]
+   aac file tail: remove the last header with defective? payload [file]fff1...
 """
 
 import os
@@ -60,26 +61,32 @@ import concurrent.futures
 
 
 class AacRepair:
-    """write repaired aac or aac(plus) files from uploaded dictionary of files to disk
-    write log list to disk, have line breaks
-    calculate cut off bytes to show in the result
+    """Write repaired aac or aac(plus) files from a dictionary of files to disk.
+
+    calculate number of cut bytes and show it in the result
     """
+    binary_array_bytes = 4
 
     def __init__(self, folder, file_dict=None):
-        """ required positional argument folder """
-        self.folder = folder
-        self.file_dict = file_dict
-        self.export_path = os.path.join(self.folder, "aac_repair")
-        self.log_list = []
-        self.file_size_dict = {}
-        self.file_size_rep_dict = {}
-        self.repaired_dict = {}
-        self.error_dict = {}
+        """Instance dictionaries can be taken to create a report later.
+
+        Method:
+           file_dict_from_folder() read content of aac files into a dict and creates export folder
+        """
+        self.folder = folder                                        # aac file folder
+        self.export_path = os.path.join(self.folder, "aac_repair")  # repaired file store, can get monkey patch
+        self.file_dict = file_dict                                  # optional dictionary of already prepared aac files
+        self.file_size_dict = {}                                    # original file size
+        self.file_size_rep_dict = {}                                # file size after cut
+        self.repaired_dict = {}                                     # names of successful repaired aac files
+        self.error_dict = {}                                        # {aac file: error message}
+        self.log_list = []                                          # for printing (list for JS to stack colored <div>)
         self.file_dict_from_folder()
 
     def file_dict_from_folder(self):
-        """ create dictionary for the repair method from folder, OR
-        take an existing dictionary (prepared by web server, no file path, only file name)
+        """Create dictionary of files {name: content} for the repair method.
+
+        Can take an existing dictionary (prepared by web server, no file path, only file name),
         create the export folder for repaired files
         """
         files = []
@@ -88,78 +95,72 @@ class AacRepair:
             if file.is_file():
                 files.append(str(file))
         if self.file_dict is None:
-            self.file_dict = {f: open(f, "rb").read() if f[-5:] == ".aacp" or f[-4:] == ".aac" else None for f in files}
+            self.file_dict = {f: open(f, "rb").read() for f in files if f[-5:] == ".aacp" or f[-4:] == ".aac"}
         self.make_dirs(self.export_path)
 
     @staticmethod
     def make_dirs(path):
+        """Create folders."""
         try:
             os.makedirs(path, exist_ok=True)
             print(f"\t{path} created")
         except OSError:
             print(f"\tDirectory {path} can not be created\nExit")
-            return
-
-    def repair(self):
-        """ call repair function
-        """
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            futures = [executor.submit(self.repair_one_file, name, content) for name, content in self.file_dict.items()]
-            concurrent.futures.wait(futures)
-
-        self.log_writer()
-        return
-
-    def repair_one_file(self, file_name, file_content):
-        """ repair beginning of file, repair end of file (file content is dictionary value)
-        write repaired file (content) to export folder and an entry to the 'repaired_dict'
-        """
-        tail_repaired = None
-
-        head_repaired = self.tool_aacp_repair_head(file_name, file_content)
-        if head_repaired is not None:
-            tail_repaired = self.tool_aacp_repair_tail(file_name, head_repaired)
-
-        name_head, name_tail = os.path.split(file_name)
-        file_path = os.path.join(self.export_path, name_tail)
-        if tail_repaired is not None:
-            with open(file_path, 'wb') as binary_writer:
-                binary_writer.write(tail_repaired)
-
-            self.repaired_dict[file_name] = file_name
+            return False
         return True
 
+    def repair(self):
+        """Repair function is using threads for a bit more speed."""
+        key_list = [file_name for file_name in self.file_dict.keys()]
+        value_list = [file_content for file_content in self.file_dict.values()]
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            executor.map(self.repair_one_file, key_list, value_list)
+        self.log_writer()
+        self.delete_file_dict()
+
+    def repair_one_file(self, file_full_name, damaged_data):
+        """Repair the beginning of a file, repair end of file (file content is dictionary value).
+
+        Write the repaired file (content) to export folder and an entry into the 'repaired_dict'."""
+        file_name_path, file_name = os.path.split(file_full_name)
+        file_export = os.path.join(self.export_path, file_name)
+
+        head_repaired = self.tool_aacp_repair_head(file_full_name, damaged_data)
+        if head_repaired is not None:
+            # tail_end (garbage) is needed for testing the module
+            body_repaired, tail_end = self.tool_aacp_repair_tail(file_full_name, head_repaired)
+            if body_repaired is not None:
+                self.write_repaired_file(file_export, body_repaired)
+                self.repaired_dict[file_full_name] = file_full_name
+
     def tool_aacp_repair_head(self, f_name, chunk):
-        """return bytes slice from shifted start to the end of chunk, except on error
-        convert hex and make search string, cut and convert back to bytes
+        """Return bytes from shifted start to the end of chunk, except on error.
 
-        code
-           convert data stream to hex and create search string, direction left to right,
-           use index from begin of file, hex_chunk[start:end]
+        code:
+           convert bytes data to hex and create search string, index direction left to right,
            while shifts the search frame one step over the file (list)
-           cut out bytes from shifted start to end of file
-           convert hex to bytes
+           cut bytes from shifted start to end of file
 
-        Info:
-           The term 'chunk' comes from web server. It is a piece of the byte stream in the buffer.
-           chunk[0:4] are the beginning words of the file, convert a word of two byte(8) to hex(16)
+        Return:
+           binary data
         """
+        start, end = 0, 2
+        header = "fff1"
+
         self.file_size_dict[f_name] = len(chunk)
-        hex_chunk = chunk.hex()
-        start, end = 0, 4
-        search_string = "fff1"
+        if len(chunk) < end:
+            self.error_dict[f_name] = "File is smaller than aac header search frame - ignore it."
+            return False
+
         while 1:
-            if end > len(hex_chunk):
+            if end > len(chunk):
                 break
-            if hex_chunk[start:end] == search_string:
+            if chunk[start:end].hex() == header:
                 try:
-                    return bytes.fromhex(hex_chunk[start:])
-                except ValueError as error:
-                    message = f'ValueError {error}'
-                    self.error_dict[f_name] = message
-                    return
+                    return chunk[start:]
                 except Exception as error:
-                    message = f'unknown error in tool_aacp_repair_head(), {error} ignore it.'
+                    message = f'HEAD unknown error in tool_aacp_repair_head(), {error} ignore file.'
                     self.error_dict[f_name] = message
                     print(message)
                     return
@@ -168,42 +169,39 @@ class AacRepair:
         return
 
     def tool_aacp_repair_tail(self, f_name, chunk):
-        """return bytes slice cut, except on error
+        """Return file content good bytes for writing a new file, except on error.
 
-        code
-           convert data stream to hex and create reversed search string, direction right to left,
-           use index from end of file, reverse index hex_chunk[end:start]
+        code:
+           convert data stream to hex and create reversed index, direction right to left,
            while shifts the search frame one step over the file (list of hex values)
-           cut from file start to the beginning of last header (file)[fff1]... hex_chunk[:end]
-           means cut out bytes to rightmost begin of search frame
-           convert hex to bytes
+           cut good bytes from repaired begin of file to the beginning of last header (file)[fff1...]
+
+        Return:
+           binary data
         """
-        hex_chunk = chunk.hex()
-        start, end = -1, -5
-        search_string = "fff1"
+        end, start = -3, -1
+        header = "fff1"
         while 1:
-            if end < -(len(hex_chunk)):
+            if end < -(len(chunk)):
                 break
-            if hex_chunk[end:start] == search_string:
+            if chunk[end:start].hex() == header:
                 try:
-                    self.file_size_rep_dict[f_name] = len(bytes.fromhex(hex_chunk[:end]))
-                    return bytes.fromhex(hex_chunk[:end])
-                except ValueError as error:
-                    message = f'ValueError {error}'
-                    self.error_dict[f_name] = message
-                    # ValueError: non-hexadecimal number found in fromhex() arg at position 64805
-                    return
+                    self.file_size_rep_dict[f_name] = len(chunk[:end])
+                    file_body = chunk[:end]
+                    file_end = chunk[end:]
+                    return file_body, file_end
                 except Exception as error:
-                    message = f'unknown error in tool_aacp_repair_tail(), {error} ignore it.'
+                    message = f'TAIL unknown error in tool_aacp_repair_tail(), {error} ignore file.'
                     self.error_dict[f_name] = message
                     print(message)
                     return
+
             start -= 1
             end -= 1
         return
 
     def log_writer(self):
-        """write log list to disk and screen"""
+        """Write log list to screen and keep it for later HTML colorized report."""
         ok_list = list()
         for f_name, name in self.repaired_dict.items():
             message = f'{name}; cut(bytes): {self.byte_calc(f_name)}'
@@ -211,14 +209,8 @@ class AacRepair:
 
         fail_msg = f'----- {str(len(self.error_dict))} file(s) failed -----'
         ok_msg = f'----- {str(len(self.repaired_dict))} file(s) repaired -----'
-        file_path = pathlib.Path(os.path.join(self.export_path, 'aac_repair.txt'))
-        with open(file_path, 'w') as text_writer:
-            text_writer.write(fail_msg + '\n')
-            [text_writer.write(f'{f_name} {err_msg}' + '\n') for f_name, err_msg in self.error_dict.items()]
-            text_writer.write(ok_msg + '\n')
-            [text_writer.write(f'{line}' + '\n') for line in ok_list]
 
-        self.log_list.append(f'[ COPY(s) in {self.export_path} ]')
+        self.log_list.append(f'\n[ COPY(s) in {self.export_path} ]')
         self.log_list.append(fail_msg)
         self.log_list.extend([f'{f_name} {err_msg}' for f_name, err_msg in self.error_dict.items()])
         self.log_list.append(ok_msg)
@@ -226,10 +218,24 @@ class AacRepair:
         print(*self.log_list, sep="\n")
 
     def byte_calc(self, f_name):
-        """return cut off bytes"""
+        """Return number of cut bytes."""
         try:
             size = self.file_size_dict[f_name] - self.file_size_rep_dict[f_name]
+            if not size:
+                raise Exception('Size: calc result after repair is zero!')
         except Exception as error:
-            message = f'error in byte_calc {error}'
-            return message
-        return f'[{size}]'
+            size = 1
+            message = f'Error in byte_calc(): set size to 1 to proceed.(test assert 1>0) {error}'
+            self.error_dict[f_name] = message
+            return size * self.binary_array_bytes
+        return size * self.binary_array_bytes
+
+    @staticmethod
+    def write_repaired_file(file_path, file_content):
+        """Write repaired file content to disk."""
+        with open(file_path, 'wb') as binary_writer:
+            binary_writer.write(file_content)
+
+    def delete_file_dict(self):
+        self.file_dict = {}
+        return
