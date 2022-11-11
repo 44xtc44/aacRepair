@@ -38,7 +38,7 @@ Web server:
    List of files is written to dictionary {file_name_key: file_byte_content_value}
    {file(n).aac: b'\x65\x66\x67\x00\x10\x00\x00\x00\x04\x00'}
    files = request.files.getlist('fileUploadAcpRepair')
-   f_dict = {f.filename: f.read() if f.filename[-5:] == ".aacp" or f.filename[-4:] == ".aac" else None for f in files}
+   f_dict = {f: open(f, "rb").read() for f in files if f[-5:] == ".aacp" or f[-4:] == ".aac"}
    aac_rep = AacRepair(export_path, f_dict)
    aac_rep.repair()
 
@@ -65,7 +65,6 @@ class AacRepair:
 
     calculate number of cut bytes and show it in the result
     """
-    binary_array_bytes = 4
 
     def __init__(self, folder, file_dict=None):
         """Instance dictionaries can be taken to create a report later.
@@ -106,8 +105,6 @@ class AacRepair:
             print(f"\t{path} created")
         except OSError:
             print(f"\tDirectory {path} can not be created\nExit")
-            return False
-        return True
 
     def repair(self):
         """Repair function is using threads for a bit more speed."""
@@ -122,7 +119,8 @@ class AacRepair:
     def repair_one_file(self, file_full_name, damaged_data):
         """Repair the beginning of a file, repair end of file (file content is dictionary value).
 
-        Write the repaired file (content) to export folder and an entry into the 'repaired_dict'."""
+        Write the repaired file (content) to export folder and an entry into the 'repaired_dict'.
+        """
         file_name_path, file_name = os.path.split(file_full_name)
         file_export = os.path.join(self.export_path, file_name)
 
@@ -151,7 +149,7 @@ class AacRepair:
         self.file_size_dict[f_name] = len(chunk)
         if len(chunk) < end:
             self.error_dict[f_name] = "File is smaller than aac header search frame - ignore it."
-            return False
+            return
 
         while 1:
             if end > len(chunk):
@@ -227,8 +225,8 @@ class AacRepair:
             size = 1
             message = f'Error in byte_calc(): set size to 1 to proceed.(test assert 1>0) {error}'
             self.error_dict[f_name] = message
-            return size * self.binary_array_bytes
-        return size * self.binary_array_bytes
+            return size
+        return size
 
     @staticmethod
     def write_repaired_file(file_path, file_content):
