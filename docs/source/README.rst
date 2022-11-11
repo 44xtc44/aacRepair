@@ -8,7 +8,7 @@ Aac files consist of multiple segments, frames. Each frame has a header and payl
 Browser get stuck if aac file frame is defective and will not start to play or refuse to play next aac file.
 This will stop the entire playlist.
 File gets trimmed from head to tail, to remove defective frames. 
-Cut off byte count is shown in the summary (aac_repair.txt). 
+Cut off byte count is shown in the summary.
 
 Usage::
 
