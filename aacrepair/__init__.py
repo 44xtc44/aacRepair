@@ -125,10 +125,10 @@ class AacRepair:
         file_export = os.path.join(self.export_path, file_name)
 
         head_repaired = self.tool_aacp_repair_head(file_full_name, damaged_data)
-        if head_repaired is not None:
+        if head_repaired:
             # tail_end (garbage) is needed for testing the module
             body_repaired, tail_end = self.tool_aacp_repair_tail(file_full_name, head_repaired)
-            if body_repaired is not None:
+            if body_repaired:
                 self.write_repaired_file(file_export, body_repaired)
                 self.repaired_dict[file_full_name] = file_full_name
 
