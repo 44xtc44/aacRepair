@@ -1,17 +1,8 @@
 # Configuration file for the Sphinx documentation builder.
 
+import os
 import sys
-from os import path
-
-this_dir = path.abspath(path.join(path.dirname(__file__)))
-app_root = path.dirname(this_dir)
-pack_root = path.dirname(app_root)
-
-# sys.path.append(path.abspath('ext/sphinx_rtd_theme'))
-
-pack_dir = path.join(pack_root, 'aacrepair')
-docs_dir = path.join(pack_root, 'docs')
-source_dir = path.join(docs_dir, 'source')
+sys.path.insert(0, os.path.abspath('../..'))
 
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
@@ -36,7 +27,7 @@ source_dir = path.join(docs_dir, 'source')
 # pip install sphinx-rtd-theme
 # pip install sphinxcontrib-napoleon
 # Use sphinx-apidoc to build your API documentation:
-# $ sphinx-apidoc -f -o docs/source   /projectdir   (use full paths for both, __init__.py in the project folders)
+# $ sphinx-apidoc -f -o docs/source   ../aacrepair
 # make html
 
 # Docstring Sections¶
