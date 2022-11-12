@@ -21,7 +21,7 @@
 #   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #   SOFTWARE.
 ###################################################################################
-"""Module stores repaired copies of aac and aacPlus files in the ``aac_repair`` folder
+"""Module stores repaired copies of aac and aacPlus files in the ``aac_repair`` folder.
 
 Browser audio gets stuck if aac is defective and will not play, also in a playlist.
 
@@ -70,7 +70,7 @@ class AacRepair:
         """Instance dictionaries can be taken to create a report later.
 
         Method:
-           file_dict_from_folder() read content of aac files into a dict and creates export folder
+           file_dict_from_folder() read content of aac files into a dict and create export folder
         """
         self.folder = folder                                        # aac file folder
         self.export_path = os.path.join(self.folder, "aac_repair")  # repaired file store, can get monkey patch
@@ -80,6 +80,7 @@ class AacRepair:
         self.repaired_dict = {}                                     # names of successful repaired aac files
         self.error_dict = {}                                        # {aac file: error message}
         self.log_list = []                                          # for printing (list for JS to stack colored <div>)
+        self.skip_list = []                                         # files not touched for some reason, inspect later
         self.file_dict_from_folder()
 
     def file_dict_from_folder(self):
@@ -107,14 +108,19 @@ class AacRepair:
             print(f"\tDirectory {path} can not be created\nExit")
 
     def repair(self):
-        """Repair function is using threads for a bit more speed."""
+        """Repair function is using threads for a bit more speed.
+
+        Returns:
+           True if log_writer() get reports of all files
+        """
         key_list = [file_name for file_name in self.file_dict.keys()]
         value_list = [file_content for file_content in self.file_dict.values()]
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             executor.map(self.repair_one_file, key_list, value_list)
-        self.log_writer()
+        all_files = self.log_writer()
         self.delete_file_dict()
+        return all_files
 
     def repair_one_file(self, file_full_name, damaged_data):
         """Repair the beginning of a file, repair end of file (file content is dictionary value).
@@ -126,10 +132,11 @@ class AacRepair:
 
         head_repaired = self.tool_aacp_repair_head(file_full_name, damaged_data)
         if head_repaired:
-            # tail_end (garbage) is needed for testing the module
-            body_repaired, tail_end = self.tool_aacp_repair_tail(file_full_name, head_repaired)
-            if body_repaired:
-                self.write_repaired_file(file_export, body_repaired)
+            rv = self.tool_aacp_repair_tail(file_full_name, head_repaired)
+            if rv:
+                # tail (garbage) is needed for testing the module
+                body, tail = rv[0], rv[1]
+                self.write_repaired_file(file_export, body)
                 self.repaired_dict[file_full_name] = file_full_name
 
     def tool_aacp_repair_head(self, f_name, chunk):
@@ -199,6 +206,8 @@ class AacRepair:
     def log_writer(self):
         """Write log list to screen and keep it for later HTML colorized report."""
         ok_list = list()
+        job_done = self.all_files_touched()
+
         for f_name, name in self.repaired_dict.items():
             message = f'{name}; cut(bytes): {self.byte_calc(f_name)}'
             ok_list.append(message)
@@ -209,11 +218,15 @@ class AacRepair:
 
         self.log_list.append(f'\n[ COPY(s) in {self.export_path} ]\n')
         self.log_list.append(count_msg)
+        if not job_done:
+            self.log_list.append('----- skipped files -----')
+            self.log_list.extend(self.all_files_touched(report=True))
         self.log_list.append(fail_msg)
         self.log_list.extend([f'{f_name} {err_msg}' for f_name, err_msg in self.error_dict.items()])
         self.log_list.append(ok_msg)
         self.log_list.extend(ok_list)
         print(*self.log_list, sep="\n")
+        return job_done
 
     def byte_calc(self, f_name):
         """Return number of cut bytes."""
@@ -235,4 +248,28 @@ class AacRepair:
             binary_writer.write(file_content)
 
     def delete_file_dict(self):
+        """Outsourced to prevent del dict in test mode."""
         self.file_dict = {}
+
+    def all_files_touched(self, report=None):
+        """Look for files not in result dicts.
+
+        Returns:
+           skip_list: list of skipped files if report is requested
+        """
+        file_fail = len(self.error_dict)
+        file_ok = len(self.repaired_dict)
+        file_all = len(self.file_dict)
+        file_left_behind = file_all - (file_ok + file_fail)
+        if report is None:
+            if not file_left_behind:
+                return True
+            else:
+                return False
+
+        if report is not None:
+            fail_list = [file for file in self.error_dict.keys()]
+            ok_list = [file for file in self.repaired_dict.keys()]
+            ok_list.extend(fail_list)
+            self.skip_list = [file for file in self.file_dict.keys() if file not in ok_list]
+            return self.skip_list
