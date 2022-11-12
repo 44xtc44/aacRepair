@@ -28,16 +28,24 @@ Methods:
    test_deactivate_fs_access() - for GitHub actions
    keep_file_dict() - use return instance value of test_deactivate_fs_access()
 """
+import os
 import pytest
 from unittest import mock
 from aacrepair import AacRepair
 
 
-def substitute_write_repaired_file(foo, bar):
+class TestRouteHome(unittest.TestCase):
+
+
+def substitute_write_repaired_file():
+    """Not sure if we can write on GitHub actions.
+    Todo test writing fs on GitHub actions
+    """
     return
 
 
 def substitute_delete_file_dict():
+    """Keep file dictionary for all test runs."""
     return
 
 
@@ -48,7 +56,10 @@ def init_aac_no_fs():
 
     monkeypatch substitute ignores os.makedirs, it will be exectuted, use mock
     """
-    aac_repair = AacRepair(r'.\aac_file')   # initialize with folder to read files
+    aac_file_dir = "aac_file"
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    aac_repair = AacRepair(os.path.join(this_dir, aac_file_dir))  # initialize with folder to read files
+
     return aac_repair
 
 
@@ -77,28 +88,28 @@ def aac_path_content_get(init_aac_no_fs):
 
 
 def test_repair_one_file(init_aac_no_fs, deactivate_fs_access, keep_file_dict):
-    """Assert file head and cut off of file end (garbage) has aac header string."""
+    """Assert file head and cut off of file end (garbage) has aac header string.
+
+    Info:
+       assert 
+    """
     generator_row = list(aac_path_content_get(init_aac_no_fs))
     row_column = generator_row[0]
     row_col_path = row_column[0]
     row_col_content = row_column[1]
-
+    print(row_col_path)
     path = row_col_path
     content = row_col_content
     file_head = init_aac_no_fs.tool_aacp_repair_head(path, content)
-    if file_head is not None:
-        if file_head:
-            assert file_head[0:2].hex() == "fff1"
-            file_body, file_end = init_aac_no_fs.tool_aacp_repair_tail(path, content)
-            if file_end is not None:
-                assert file_end[0:2].hex() == "fff1"
-        else:
-            assert init_aac_no_fs.file_size_dict[path] < 2
+    if file_head:
+        file_body, file_end = init_aac_no_fs.tool_aacp_repair_tail(path, content)
+        if file_end:
+            assert file_end[0:3].hex() == "fff1"
 
 
 def test_damage_all_files(init_aac_no_fs, deactivate_fs_access, keep_file_dict):
     """Damage the beginning and end of all files in, from fs loaded, dictionary
-    by cutting 10 index steps (* 4 bytes) of head and tail.
+    by cutting 10 index of head and tail.
 
     Methods:
        byte_calc() length of file content is larger before cutting, method must handle error if length is zero
@@ -112,3 +123,11 @@ def test_damage_all_files(init_aac_no_fs, deactivate_fs_access, keep_file_dict):
 
         assert init_aac_no_fs.byte_calc(path) > 0
         test_repair_one_file(init_aac_no_fs, deactivate_fs_access, keep_file_dict)
+
+
+def all_files_touched(init_aac_no_fs, deactivate_fs_access, keep_file_dict):
+    fail = len(init_aac_no_fs.error_dict)
+    ok = len(init_aac_no_fs.repaired_dict)
+    count = len(init_aac_no_fs.file_dict)
+    assert fail + ok == count
+    # repr str

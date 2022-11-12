@@ -153,6 +153,7 @@ class AacRepair:
 
         while 1:
             if end > len(chunk):
+                self.error_dict[f_name] = "File has no aac header - ignore it."
                 break
             if chunk[start:end].hex() == header:
                 try:
@@ -160,7 +161,6 @@ class AacRepair:
                 except Exception as error:
                     message = f'HEAD unknown error in tool_aacp_repair_head(), {error} ignore file.'
                     self.error_dict[f_name] = message
-                    print(message)
                     return
             start += 1
             end += 1
@@ -184,16 +184,14 @@ class AacRepair:
                 break
             if chunk[end:start].hex() == header:
                 try:
-                    self.file_size_rep_dict[f_name] = len(chunk[:end])
                     file_body = chunk[:end]
                     file_end = chunk[end:]
+                    self.file_size_rep_dict[f_name] = len(file_body)
                     return file_body, file_end
                 except Exception as error:
                     message = f'TAIL unknown error in tool_aacp_repair_tail(), {error} ignore file.'
                     self.error_dict[f_name] = message
-                    print(message)
                     return
-
             start -= 1
             end -= 1
         return
@@ -207,8 +205,10 @@ class AacRepair:
 
         fail_msg = f'----- {str(len(self.error_dict))} file(s) failed -----'
         ok_msg = f'----- {str(len(self.repaired_dict))} file(s) repaired -----'
+        count_msg = f'----- {str(len(self.file_dict))} file(s) to repair -----'
 
-        self.log_list.append(f'\n[ COPY(s) in {self.export_path} ]')
+        self.log_list.append(f'\n[ COPY(s) in {self.export_path} ]\n')
+        self.log_list.append(count_msg)
         self.log_list.append(fail_msg)
         self.log_list.extend([f'{f_name} {err_msg}' for f_name, err_msg in self.error_dict.items()])
         self.log_list.append(ok_msg)
@@ -236,4 +236,3 @@ class AacRepair:
 
     def delete_file_dict(self):
         self.file_dict = {}
-        return
