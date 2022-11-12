@@ -130,16 +130,16 @@ class AacRepair:
         file_name_path, file_name = os.path.split(file_full_name)
         file_export = os.path.join(self.export_path, file_name)
 
-        head_repaired = self.tool_aacp_repair_head(file_full_name, damaged_data)
+        head_repaired = self.repair_head(file_full_name, damaged_data)
         if head_repaired:
-            rv = self.tool_aacp_repair_tail(file_full_name, head_repaired)
+            rv = self.repair_tail(file_full_name, head_repaired)
             if rv:
                 # tail (garbage) is needed for testing the module
                 body, tail = rv[0], rv[1]
                 self.write_repaired_file(file_export, body)
                 self.repaired_dict[file_full_name] = file_full_name
 
-    def tool_aacp_repair_head(self, f_name, chunk):
+    def repair_head(self, f_name, chunk):
         """Return bytes from shifted start to the end of chunk, except on error.
 
         code:
@@ -166,14 +166,14 @@ class AacRepair:
                 try:
                     return chunk[start:]
                 except Exception as error:
-                    message = f'HEAD unknown error in tool_aacp_repair_head(), {error} ignore file.'
+                    message = f'HEAD unknown error in repair_head(), {error} ignore file.'
                     self.error_dict[f_name] = message
                     return
             start += 1
             end += 1
         return
 
-    def tool_aacp_repair_tail(self, f_name, chunk):
+    def repair_tail(self, f_name, chunk):
         """Return file content good bytes for writing a new file, except on error.
 
         code:
@@ -196,7 +196,7 @@ class AacRepair:
                     self.file_size_rep_dict[f_name] = len(file_body)
                     return file_body, file_end
                 except Exception as error:
-                    message = f'TAIL unknown error in tool_aacp_repair_tail(), {error} ignore file.'
+                    message = f'TAIL unknown error in repair_tail(), {error} ignore file.'
                     self.error_dict[f_name] = message
                     return
             start -= 1
