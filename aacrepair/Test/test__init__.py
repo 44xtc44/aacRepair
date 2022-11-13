@@ -150,7 +150,6 @@ class TestAacRepair:
                 break
             path = row_column[0]
             content = row_column[1]
-            q = len(content)
 
             file_head = self.init_aac_no_fs.repair_head(path, content)
             if file_head:
