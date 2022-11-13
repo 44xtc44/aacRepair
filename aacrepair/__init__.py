@@ -52,7 +52,7 @@ technical stuff:
    Move the header search frame over the aac file
    start is file[0:2], shift the search frame file[1:3], file[2:4]
    aac file head: remove the first defective! payload ...[fff1 file]
-   aac file tail: remove the last header with defective? payload [file]fff1...
+   aac file tail: remove the last header with unknown defective? payload [file]fff1...
 """
 
 import os
@@ -63,7 +63,7 @@ import concurrent.futures
 class AacRepair:
     """Write repaired aac or aac(plus) files from a dictionary of files to disk.
 
-    calculate number of cut bytes and show it in the result
+    Calculate number of cut bytes and show it in the result. Use dicts for failed and repaired file names.
     """
 
     def __init__(self, folder, file_dict=None):
@@ -83,11 +83,18 @@ class AacRepair:
         self.skip_list = []                                         # files not touched for some reason, inspect later
         self.file_dict_from_folder()
 
+    def __repr__(self):
+        """Returns the object again. For whatever reason."""
+        return f'AacRepair(r"{self.folder}", "{self.file_dict}=None")'
+
+    def __str__(self):
+        return f'({self.folder},{self.file_dict})'
+
     def file_dict_from_folder(self):
         """Create dictionary of files {name: content} for the repair method.
 
         Can take an existing dictionary (prepared by web server, no file path, only file name),
-        create the export folder for repaired files
+        Create the export folder for repaired files.
         """
         files = []
         aac_folder = pathlib.Path(self.folder)
@@ -111,7 +118,7 @@ class AacRepair:
         """Repair function is using threads for a bit more speed.
 
         Returns:
-           True if log_writer() get reports of all files
+           True if log_writer() gets reports of all files, else False
         """
         key_list = [file_name for file_name in self.file_dict.keys()]
         value_list = [file_content for file_content in self.file_dict.values()]
@@ -132,10 +139,10 @@ class AacRepair:
 
         head_repaired = self.repair_head(file_full_name, damaged_data)
         if head_repaired:
-            rv = self.repair_tail(file_full_name, head_repaired)
-            if rv:
+            cut = self.repair_tail(file_full_name, head_repaired)
+            if cut:
                 # tail (garbage) is needed for testing the module
-                body, tail = rv[0], rv[1]
+                body, tail = cut[0], cut[1]
                 self.write_repaired_file(file_export, body)
                 self.repaired_dict[file_full_name] = file_full_name
 
@@ -204,7 +211,7 @@ class AacRepair:
         return
 
     def log_writer(self):
-        """Write log list to screen and keep it for later HTML colorized report."""
+        """Write available logs to screen and keep it for later HTML colorized report."""
         ok_list = list()
         job_done = self.all_files_touched()
 
@@ -253,6 +260,8 @@ class AacRepair:
 
     def all_files_touched(self, report=None):
         """Look for files not in result dicts.
+
+        On return, if False, the report can be activated in a second call.
 
         Returns:
            skip_list: list of skipped files if report is requested
