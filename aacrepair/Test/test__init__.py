@@ -80,7 +80,7 @@ class TestAacRepair:
     def aac_path_content_get(self, damage=None):
         """Return generator object as (path, content) tuple."""
         if damage:
-            self.damage_all_files()
+            self.aac_hair_cut_pedicure()
             for path, size in self.init_aac_no_fs.file_size_dict.items():
                 if size:
                     assert self.init_aac_no_fs.file_size_rep_dict[path] < self.init_aac_no_fs.file_size_dict[path]
@@ -170,7 +170,7 @@ class TestAacRepair:
             self.init_aac_no_fs.file_size_rep_dict[path] = len(self.init_aac_no_fs.file_dict[path])
             assert self.init_aac_no_fs.byte_calc(path) > 0
 
-    def damage_all_files(self):
+    def aac_hair_cut_pedicure(self):
         """Damage the beginning and end of all files in, from fs loaded, dictionary
         by cutting 2 index of head and tail.
         """
