@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aacRepair"
-version = "0.6"
+version = "0.7"
 description = "repair aac files"
 keywords = ['aac repair', 'aacp repair','aac file repair', 'aacp file repair',]
 license = {file = "LICENSE.rst"}
@@ -24,25 +24,14 @@ classifiers = [
 dependencies = [
 ]
 
+[project.scripts]
+aacrepair = "aacrepair.cmd:main"
+
 [project.urls]
 homepage = "https://github.com/44xtc44"
 documentation = "https://aacRepair.readthedocs.io/"
 repository = "https://github.com/44xtc44/aacRepair"
 
 [tool.pytest.ini_options]
-# addopts = "--cov=."
-# testpaths = "."
-
-[tool.mypy]
-mypy_path = "aacRepair"
-check_untyped_defs = true
-disallow_any_generics = true
-ignore_missing_imports = true
-no_implicit_optional = true
-show_error_codes = true
-strict_equality = true
-warn_redundant_casts = true
-warn_return_any = true
-warn_unreachable = true
-warn_unused_configs = true
-no_implicit_reexport = true
+addopts = "--cov=."
+testpaths = "."
