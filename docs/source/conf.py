@@ -3,6 +3,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../..'))
+sys.path.append(os.path.abspath('../../aacrepair'))
 
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
@@ -80,11 +81,12 @@ author = 'René Horn'
 extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosectionlabel',  # find cross ref
 ]
 
 # Napoleon settings
 napoleon_google_docstring = True
-napoleon_numpy_docstring = True
+napoleon_numpy_docstring = False
 napoleon_include_init_with_doc = False
 napoleon_include_private_with_doc = False
 napoleon_include_special_with_doc = True
@@ -108,7 +110,7 @@ html_theme = 'sphinx_rtd_theme'
 pygments_style = 'sphinx'
 
 html_static_path = ['_static']
-html_logo = "repair_logo.png"
+html_logo = "aac_logo.svg"
 html_logo_only = True
 html_display_version = False
 html_css_files = [
