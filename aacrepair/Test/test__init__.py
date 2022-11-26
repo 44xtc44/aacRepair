@@ -103,7 +103,7 @@ class TestAacRepair:
 
             cut = self.init_aac_no_fs.repair_head(path, content)
             if cut:
-                assert cut[0:2].hex() == "fff1"
+                assert cut[0:2].hex() in ["fff9", "fff1"]
                 self.init_aac_no_fs.repaired_dict[path] = path
             else:
                 self.init_aac_no_fs.error_dict[path] = path
@@ -127,8 +127,8 @@ class TestAacRepair:
 
             cut = self.init_aac_no_fs.repair_tail(path, content)
             if cut:
-                body, tail = cut[0], cut[1]
-                assert tail[0:2].hex() == "fff1"
+                tail = cut[1]
+                assert tail[0:2].hex() in ["fff9", "fff1"]
                 self.init_aac_no_fs.repaired_dict[path] = path
             else:
                 self.init_aac_no_fs.error_dict[path] = path
@@ -155,8 +155,8 @@ class TestAacRepair:
             if file_head:
                 rv = self.init_aac_no_fs.repair_tail(path, content)
                 if rv:
-                    body, tail = rv[0], rv[1]
-                    assert tail[0:2].hex() == "fff1"
+                    tail = rv[1]
+                    assert tail[0:2].hex() in ["fff9", "fff1"]
                     self.init_aac_no_fs.repaired_dict[path] = path
                     pass
         self.test_repair_one_file(deactivate_fs_access, keep_file_dict, max_loop + 1)
