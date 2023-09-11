@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aacRepair"
-version = "0.7"
+version = "0.7.1"
 description = "repair aac files"
 keywords = ['aac repair', 'aacp repair','aac file repair', 'aacp file repair',]
 license = {file = "LICENSE.rst"}

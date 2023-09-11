@@ -15,17 +15,26 @@ Cut off byte count is shown in the summary.
 Command Line
 ------------
     
-    $ aacrepair
+    $ aacrepair  # run exec Script
+    $ python -m aacrepair.cmd  # if Python path for script failed
+    
+Menu
 
             Menu "Main"
     1 -- Single File aac or aacPlus
     2 -- Bulk Repair, Folder
     3 -- Exit
-    Enter your choice: 1
+    Enter your choice: 2
+   
+Folder
 
-Python or sys.path fail; use 
+	Bulk Repair, Folder
 
-    $ python -m aacrepair.cmd
+    (A) Type folder, repaired in <folder>/aac_repair .
+    (B) type /folder/foo /cloud/bar ,for custom export path.
+
+    Enter a path, OS syntax (f:\10 or /home ) -->:f:\10 f:\10\repaired_aac
+
 
 
 aacrepair Module 
