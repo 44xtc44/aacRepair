@@ -81,7 +81,7 @@ def prepare_path_run_write_bulk(aac_path):
     export_path = path_list[1] if len(path_list) > 1 else None
     if pathlib.Path(default_path).is_dir():
         if export_path:
-            instance_repair_bulk(default_path, export_path=True)
+            instance_repair_bulk(default_path, export_path=export_path)
         else:
             instance_repair_bulk(default_path)
         print(f'{exit_msg}')

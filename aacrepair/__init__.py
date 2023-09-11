@@ -183,7 +183,7 @@ class AacRepair:
         """
         file_full_name = "buf.aac"
 
-        if type(chunk) != bytes:
+        if type(chunk) is not bytes:
             chunk = self.convert_file_like_object(chunk)
             if not chunk:
                 return False
