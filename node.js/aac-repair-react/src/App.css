@@ -1,0 +1,99 @@
+.App {
+  width: 600px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align:center;
+  background-color: #2f74c0;
+  font-family: "Roboto", sans-serif;
+}
+
+.heading {
+  font-size: 40px;
+  margin: 30px 0;
+  z-index: 1;
+  text-align: center;
+  text-transform: uppercase;
+  color: black;
+}
+
+.input__box {
+position: relative;
+width: 400px;
+border-radius: 50px;
+padding: 10px 30px;
+font-size: 20px;
+border: none;
+transition: 0.2s;
+box-shadow: inset 0 0 5px black;
+}
+
+.input__box:focus {
+box-shadow: 0 0 10px 1000px rgba(0,0,0,1);
+outline: none;
+}
+
+.input__submit {
+position: absolute;
+width: 50px;
+height: 50px;
+margin: 12px;
+border-radius: 50px;
+border: none;
+font-size: 15px;
+background-color: #2f74c0;
+text-align: center;
+vertical-align: middle;
+line-height: 50px; 
+color: white;
+transition: 0.2s all;
+box-shadow: 0 0 10px black;
+z-index: 1;
+}
+
+.input__submit:hover {
+  background-color: #388ae2;
+}
+
+.input__submit:active {
+  transform: scale(0.8);
+  box-shadow: 0 0 5px black;
+}
+#input__submit__files {
+  left: 350px;
+}
+#input__submit__send {
+  left: 450px;
+}
+#input__files {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  margin: 12px;
+  border-radius: 50px;
+  border: none;
+  font-size: 15px;
+  background-color: #2f74c0;
+  color: white;
+  transition: 0.2s all;
+  box-shadow: 0 0 10px black;
+}
+input[type='file'] {
+  position: absolute;
+  opacity: 0;
+  z-index: -1;
+}
+.SelectedFiles {
+  position: absolute;
+  margin: 20px 50px;
+  left: 20px;
+  text-align: left;
+}
+.RepairResult {
+  margin-top: 20px;
+  text-align: left;
+}
+.pFolder {
+  font-size: 20px;
+}
