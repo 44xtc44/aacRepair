@@ -6,6 +6,9 @@
   "exports": {
     ".": "./index.js"
   },
+  "config": {
+    "unsafe-perm":true
+  },
   "homepage": "https://github.com/44xtc44/aacRepair.git",
   "repository": {
     "type": "git",
