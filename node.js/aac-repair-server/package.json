@@ -1,27 +1,38 @@
 {
   "name": "aac-repair",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Browser refuses to play aac file. Clean cut header and payload. Translation from Python project node.js.",
   "main": "./index.js",
-  "exports": {
-    ".": "./index.js"
+  "engines": {
+    "node": ">=16"
   },
-  "homepage": "https://github.com/44xtc44/aacRepair.git",
+  "scripts": {
+    "start": "node index.js",
+    "build": "rollup -c && chmod a+x ./bin/aac-repair.js",
+    "lint": "standard --verbose --fix",
+    "posttest": "ls -1 *.md | xargs -t -n 1 markdown-link-check",
+    "prepublishOnly": "npm run build",
+    "pretest": "npm run lint && npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/44xtc44/aacRepair.git"
+    "url": "git+https://github.com/44xtc44/aacRepair.git"
+  },
+  "author": "44xtc44",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/44xtc44/aacRepair/issues"
+  },
+  "exports": {
+    ".": "./index.js"
   },
   "keywords": [
     "aac",
     "aacp",
     "browser play aac repair"
   ],
-  "author": "44xtc44",
-  "license": "MIT",
-  "scripts": {
-    "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "homepage": "https://github.com/44xtc44/aacRepair/tree/dev/node.js/aac-repair-server#readme",
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.3",
@@ -36,7 +47,8 @@
     "README.md",
     "aacWorker.js",
     "index.js",
-    "server-aac.js"
+    "server-aac.js",
+    "aac-repair.js"
   ],
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -44,5 +56,6 @@
     "@types/express-fileupload": "^1.4.4",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^20.11.28"
-  }
+  },
+  "bin": "bin/aac-repair.js"
 }

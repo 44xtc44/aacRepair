@@ -40,7 +40,7 @@ Terminal window shows progress.
 ```js
 // serverApp.js
 const aac = require("aac-repair");
-aac.app();  // port 8081; may work aac.app( {port: 8082} );
+aac.app( {browser: true} );
 ```
 ```console
 foo@bar:~$ node serverApp.js
@@ -94,6 +94,10 @@ aac.cutOneByteAacFolder("C:\\Users\\Schtroumpfette\\sound");
 ```
 
 #### Command line Browser start
+
+```console
+foo@bar:~$ aac-repair
+```
 
 Install the package in a folder.
 Got to "node_modules/aac-repair" directory.
