@@ -8,11 +8,7 @@
   },
   "scripts": {
     "start": "node index.js",
-    "build": "rollup -c && chmod a+x ./bin/aac-repair.js",
     "lint": "standard --verbose --fix",
-    "posttest": "ls -1 *.md | xargs -t -n 1 markdown-link-check",
-    "prepublishOnly": "npm run build",
-    "pretest": "npm run lint && npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -41,14 +37,7 @@
     "out-url": "^1.2.2"
   },
   "files": [
-    "dist",
-    "build",
-    "LICENSE",
-    "README.md",
-    "aacWorker.js",
-    "index.js",
-    "server-aac.js",
-    "aac-repair.js"
+    "*"
   ],
   "devDependencies": {
     "@types/cors": "^2.8.17",
